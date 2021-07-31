@@ -1,14 +1,17 @@
 <template>
   <div id="home">
     <nav-bar class="homt-nav"><div slot="center">购物街</div></nav-bar>
-    <home-swiper :banners="banners"/>
-    <home-recommend :recommends="recommends" />
-    <home-featuer />
-    <tab-control :title= "['流行', '新款', '精选']" 
+    <scroll class="content" ref="scroll" :probeType="3" @scroll='contentScroll'>
+      <home-swiper :banners="banners"/>
+      <home-recommend :recommends="recommends" />
+      <home-featuer />
+      <tab-control :title= "['流行', '新款', '精选']" 
                   class="tab-control" 
                   @tabClick="tabClick"/>
-    <goods-list :goods= "goods[currentType].list" />
-    <ul>
+      <goods-list :goods= "goods[currentType].list" />
+    </scroll>
+    <!-- <ul>
+
       <li>列表1</li>
       <li>列表2</li>
       <li>列表3</li>
@@ -109,18 +112,23 @@
       <li>列表98</li>
       <li>列表99</li>
       <li>列表100</li>
-    </ul>
+    </ul> -->
+    <back-top  @click.native="backClick" v-show="isShowBackTop"/>
   </div>
+
 </template>
 
 <script>
-import NavBar from 'components/common/navbar/NavBar'
+
 import HomeSwiper from './childComp/HomeSwiper'
 import HomeRecommend from './childComp/HomeRecommed'
 import HomeFeatuer from './childComp/HomeFeatuer.vue'
 
+import NavBar from 'components/common/navbar/NavBar'
 import TabControl from 'components/content/tabControl/TabControl'
 import GoodsList from 'components/content/goods/GoodsList'
+import Scroll from 'components/common/scroll/Scroll'
+import BackTop from 'components/content/backTop/BackTop'
 
 import {getHomeMultidata, getHomeGoods} from 'network/home'
 
@@ -132,7 +140,9 @@ import {getHomeMultidata, getHomeGoods} from 'network/home'
       HomeRecommend,
       HomeFeatuer,
       TabControl,
-      GoodsList
+      GoodsList,
+      Scroll,
+      BackTop
     },
     data() {
       return {
@@ -145,7 +155,8 @@ import {getHomeMultidata, getHomeGoods} from 'network/home'
           'new': {page: 0, list: []},
           'sell': {page: 0, list: []},
         },
-        currentType: 'pop'
+        currentType: 'pop',
+        isShowBackTop: 'flase'
       }
     },
     // 在创建组件的时候就发送网络请求
@@ -161,7 +172,7 @@ import {getHomeMultidata, getHomeGoods} from 'network/home'
       // 请求多个数据
       getHomeMultidata(){
         getHomeMultidata().then(res => {
-        console.log(res)
+        // console.log(res)
         // 将请求过来的数据保存起来，不会因为请求完成就销毁
         this.banners = res.data.data.banner.list
         this.recommends = res.data.data.recommend.list
@@ -190,6 +201,13 @@ import {getHomeMultidata, getHomeGoods} from 'network/home'
             this.currentType = 'sell'
             break
         }
+      },
+      backClick(){
+        this.$refs.scroll.scrollTo(0, 0)
+      },
+      contentScroll(position){
+        // console.log(position)  当 position.y > 1000 时显示出回到顶部按钮
+        this.isShowBackTop = (-position.y) > 1000
       }
       
     },
@@ -209,12 +227,27 @@ import {getHomeMultidata, getHomeGoods} from 'network/home'
   }
   #home{
     padding-top: 44px;
+    height: 100vh;
+
+    position: relative;
   }
   .tab-control{
     position: sticky;
     top: 44px;
 
     z-index: 9;
+  }
+
+  .content{
+    /* height: 500px; */
+    overflow: hidden;
+
+    position: absolute;
+    top: 44px;
+    bottom: 49px;
+    left: 0;
+    right: 0;
+
   }
 
 </style>

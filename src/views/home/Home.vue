@@ -1,13 +1,23 @@
 <template>
   <div id="home">
     <nav-bar class="homt-nav"><div slot="center">购物街</div></nav-bar>
-    <scroll class="content" ref="scroll" :probeType="3" @scroll='contentScroll'>
-      <home-swiper :banners="banners"/>
+    <tab-control :title= "['流行', '新款', '精选']" 
+                   @tabClick="tabClick"
+                   ref="tabControl1"
+                   class="tab-constrol"
+                   v-show="isTabShow"/>
+    <scroll class="content" 
+            ref="scroll" 
+            :probeType="3" 
+            :pullUpLoad = "true"
+            @scroll='contentScroll'
+            @pullingUp= 'loadMore'>
+      <home-swiper :banners="banners" @swiperImageLoad='swiperImageLoad'/>
       <home-recommend :recommends="recommends" />
       <home-featuer />
       <tab-control :title= "['流行', '新款', '精选']" 
-                  class="tab-control" 
-                  @tabClick="tabClick"/>
+                   @tabClick="tabClick"
+                   ref="tabControl2"/>
       <goods-list :goods= "goods[currentType].list" />
     </scroll>
     <!-- <ul>
@@ -131,6 +141,7 @@ import Scroll from 'components/common/scroll/Scroll'
 import BackTop from 'components/content/backTop/BackTop'
 
 import {getHomeMultidata, getHomeGoods} from 'network/home'
+import {debounce} from 'common/utils'
 
   export default {
     name: "Home",
@@ -156,17 +167,34 @@ import {getHomeMultidata, getHomeGoods} from 'network/home'
           'sell': {page: 0, list: []},
         },
         currentType: 'pop',
-        isShowBackTop: 'flase'
+        isShowBackTop: 'flase',
+        // 记录 tab-control 的 offsetTop
+        tabOffsetTop: 0,
+        // 记录 tab-control1 是否显示
+        isTabShow: false
       }
     },
     // 在创建组件的时候就发送网络请求
     created() {
       // 请求多个数据
       this.getHomeMultidata(),
-      // 请求商品数据
+      // 请求商品数据    调用当前对象下的 getHomeGoods 函数
       this.getHomeGoods('pop')
       this.getHomeGoods('new')
       this.getHomeGoods('sell')
+
+    },
+    mounted() {
+      // 这里需要考虑的是，需要在 mounted中进行监听，而不是在created中进行监听，在created中可能 scroll对象还没创建好
+      // 当组件开始被创建时就开始监听图片是否加载完成
+
+      // 防抖函数
+      const refresh = debounce(this.$refs.scroll.refresh, 200)
+      this.$bus.$on('itemImageLoad', () => {
+        // console.log('6666')
+        refresh()
+      })
+
     },
     methods: {
       // 请求多个数据
@@ -180,12 +208,15 @@ import {getHomeMultidata, getHomeGoods} from 'network/home'
       },
       // 请求商品数据
       getHomeGoods(type){
-        // 每调用一次，page 就加一
+        // 每调用一次，page 就加一,然后才能请求下一页的数据
         const page = this.goods[type].page + 1
+        // 调用外部（home.js中）封装的 getHomeGoods 函数
         getHomeGoods(type, page).then(res => {
           // console.log(res)
           this.goods[type].list.push(...res.data.data.list) 
           this.goods[type].page += 1
+
+          this.$refs.scroll.finishPullUp()
         })
       },
 
@@ -201,6 +232,9 @@ import {getHomeMultidata, getHomeGoods} from 'network/home'
             this.currentType = 'sell'
             break
         }
+        // 要设置两个 tab-control 的点击情况一致
+        this.$refs.tabControl1.currentIndex = index
+        this.$refs.tabControl2.currentIndex = index
       },
       backClick(){
         this.$refs.scroll.scrollTo(0, 0)
@@ -208,8 +242,20 @@ import {getHomeMultidata, getHomeGoods} from 'network/home'
       contentScroll(position){
         // console.log(position)  当 position.y > 1000 时显示出回到顶部按钮
         this.isShowBackTop = (-position.y) > 1000
+
+        // 当滚动大于 tabOffsetTop 时就设置效果
+        this.isTabShow = (-position.y) > this.tabOffsetTop
+      },
+      // 上拉加载更多
+      loadMore(){
+        this.getHomeGoods(this.currentType)
+      },
+      // 监听 swiper 图片加载完成 
+      swiperImageLoad(){
+        // tab-control 的吸顶效果   ----> 获取 tab-control 的 offsetTop
+        this.tabOffsetTop = this.$refs.tabControl2.$el.offsetTop
       }
-      
+
     },
   }
 </script>
@@ -231,13 +277,6 @@ import {getHomeMultidata, getHomeGoods} from 'network/home'
 
     position: relative;
   }
-  .tab-control{
-    position: sticky;
-    top: 44px;
-
-    z-index: 9;
-  }
-
   .content{
     /* height: 500px; */
     overflow: hidden;
@@ -248,6 +287,10 @@ import {getHomeMultidata, getHomeGoods} from 'network/home'
     left: 0;
     right: 0;
 
+  }
+  .tab-constrol{
+    position: relative;
+    z-index: 9;
   }
 
 </style>

@@ -1,7 +1,7 @@
 <!-- 商品列表 小组件 -->
 <template>
   <div class="goods-item">
-      <img :src="goodsItem.show.img" alt="">
+      <img :src="goodsItem.show.img" alt="" @load="imageLoad">
       <div class="goods-info">
         <p>{{goodsItem.title}}</p>
         <span class="price">{{goodsItem.price}}</span>
@@ -19,7 +19,12 @@ export default {
     return {
     }
   },
-  methods: {},
+  methods: {
+    // 当图片加载完成后会调用这个函数
+    imageLoad(){
+      this.$bus.$emit('itemImageLoad')
+    }
+  },
   props: {
       goodsItem: {
           type: Object,

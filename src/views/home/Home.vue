@@ -171,7 +171,9 @@ import {debounce} from 'common/utils'
         // 记录 tab-control 的 offsetTop
         tabOffsetTop: 0,
         // 记录 tab-control1 是否显示
-        isTabShow: false
+        isTabShow: false,
+        // 保存离开 home 时的 Y 位置
+        saveY: 0
       }
     },
     // 在创建组件的时候就发送网络请求
@@ -195,6 +197,16 @@ import {debounce} from 'common/utils'
         refresh()
       })
 
+    },
+    // 当进入 当前组件时, 将离开保存的 y 位置设置为进入时的 y 位置
+    activated() {
+      this.$refs.scroll.scrollTo(0, this.saveY, 0)
+      // 当进入组件时，最好要设置重新刷新一下 scroll，以免发生错误
+      this.$refs.scroll.refresh()
+    },
+    // 当离开 当前组件时，保存当前离开的位置
+    deactivated() {
+      this.saveY = this.$refs.scroll.getScrollY()
     },
     methods: {
       // 请求多个数据

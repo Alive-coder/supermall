@@ -34,11 +34,13 @@ export default {
   methods: {
     //   需要将参数传递过来
       itemClick(index){
-          this.currentIndex = index
+        this.currentIndex = index
+        //   点击时向外界发送事件用于事件滚动绑定
+        this.$emit('itemClick', index)
       },
     //   回退按钮
       backClick(){
-          this.$router.back()
+        this.$router.back()
       }
   }
 }

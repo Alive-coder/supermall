@@ -141,7 +141,7 @@ import Scroll from 'components/common/scroll/Scroll'
 import BackTop from 'components/content/backTop/BackTop'
 
 import {getHomeMultidata, getHomeGoods} from 'network/home'
-import {debounce} from 'common/utils'
+import {itemListenerMixin} from 'common/mixins'
 
   export default {
     name: "Home",
@@ -155,6 +155,7 @@ import {debounce} from 'common/utils'
       Scroll,
       BackTop
     },
+    mixins: [itemListenerMixin],
     data() {
       return {
         // 我们需要将请求过来的数据进行保存，不然会被回收掉
@@ -190,13 +191,13 @@ import {debounce} from 'common/utils'
       // 这里需要考虑的是，需要在 mounted中进行监听，而不是在created中进行监听，在created中可能 scroll对象还没创建好
       // 当组件开始被创建时就开始监听图片是否加载完成
 
-      // 防抖函数
-      const refresh = debounce(this.$refs.scroll.refresh, 200)
-      this.$bus.$on('itemImageLoad', () => {
-        // console.log('6666')
-        refresh()
-      })
-
+//       // 防抖函数
+//       const refresh = debounce(this.$refs.scroll.refresh, 200)
+// //    记录 itemImgLoad 函数
+//       this.itemImgLoad = () => {
+//         refresh()
+//       }
+//       this.$bus.$on('itemImageLoad', this.itemImgLoad)
     },
     // 当进入 当前组件时, 将离开保存的 y 位置设置为进入时的 y 位置
     activated() {
@@ -207,6 +208,9 @@ import {debounce} from 'common/utils'
     // 当离开 当前组件时，保存当前离开的位置
     deactivated() {
       this.saveY = this.$refs.scroll.getScrollY()
+
+      // 当离开页面时，取消对图片加载完成的监听
+      this.$bus.$off('itemImageLoad', this.itemImgLoad)
     },
     methods: {
       // 请求多个数据

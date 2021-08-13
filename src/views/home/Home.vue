@@ -138,10 +138,9 @@ import NavBar from 'components/common/navbar/NavBar'
 import TabControl from 'components/content/tabControl/TabControl'
 import GoodsList from 'components/content/goods/GoodsList'
 import Scroll from 'components/common/scroll/Scroll'
-import BackTop from 'components/content/backTop/BackTop'
 
 import {getHomeMultidata, getHomeGoods} from 'network/home'
-import {itemListenerMixin} from 'common/mixins'
+import {itemListenerMixin, BackTopMixin} from 'common/mixins'
 
   export default {
     name: "Home",
@@ -153,9 +152,8 @@ import {itemListenerMixin} from 'common/mixins'
       TabControl,
       GoodsList,
       Scroll,
-      BackTop
     },
-    mixins: [itemListenerMixin],
+    mixins: [itemListenerMixin, BackTopMixin],
     data() {
       return {
         // 我们需要将请求过来的数据进行保存，不然会被回收掉
@@ -168,7 +166,6 @@ import {itemListenerMixin} from 'common/mixins'
           'sell': {page: 0, list: []},
         },
         currentType: 'pop',
-        isShowBackTop: 'flase',
         // 记录 tab-control 的 offsetTop
         tabOffsetTop: 0,
         // 记录 tab-control1 是否显示
@@ -251,9 +248,6 @@ import {itemListenerMixin} from 'common/mixins'
         // 要设置两个 tab-control 的点击情况一致
         this.$refs.tabControl1.currentIndex = index
         this.$refs.tabControl2.currentIndex = index
-      },
-      backClick(){
-        this.$refs.scroll.scrollTo(0, 0)
       },
       contentScroll(position){
         // console.log(position)  当 position.y > 1000 时显示出回到顶部按钮

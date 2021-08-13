@@ -14,6 +14,8 @@
         <detail-comment-info :comment-info='commentInfo' ref="comment" />
         <goods-list :goods='recommends'  ref="recommend"/>
       </scroll>
+      <detail-bottom-bar @addToCart='addToCart' />
+       <back-top  @click.native="backClick" v-show="isShowBackTop"/>
   </div>
 </template>
 
@@ -25,15 +27,18 @@ import DetailShopInfo from './childComps/DetailShopInfo'
 import DetailGoodsInfo from './childComps/DetailGoodsInfo'
 import DetailParamInfo from './childComps/DetailParamInfo'
 import DetailCommentInfo from './childComps/DetailCommentInfo'
+import DetailBottomBar from './childComps/DetailBottomBar.vue'
 
 import GoodsList from 'components/content/goods/GoodsList'
 
 import Scroll from 'components/common/scroll/Scroll'
 
-import {itemListenerMixin} from 'common/mixins'
+import {itemListenerMixin , BackTopMixin} from 'common/mixins'
 import {debounce} from 'common/utils'
 
 import {getDetail, Goods,  Shop, GoodsParam, getRecommends} from 'network/detail'
+
+import { mapActions } from 'vuex'
 
 export default {
   name: 'Detail',
@@ -58,10 +63,10 @@ export default {
       // 记录防抖函数 用于记录 offsetTop
       getThemeTopY: null,
       // 记录当前处于哪个位置，切换成对于的导航栏按钮,用于不判断那么多次
-      currentIndex: 0
+      currentIndex: 0,
     }
   },
-  mixins: [itemListenerMixin],
+  mixins: [itemListenerMixin, BackTopMixin],
   components: {
       DetailNavBar,
       DetailSwiper,
@@ -71,9 +76,15 @@ export default {
       DetailGoodsInfo,
       DetailParamInfo,
       DetailCommentInfo,
-      GoodsList
+      GoodsList,
+      DetailBottomBar,
   },
   methods: {
+    // 映射 addToCart 方法
+      ...mapActions({
+        add: 'addToCart'
+      }),
+
     //   当图片加载完成调用这个方法，使 scroll 进行刷新
       imageLoad(){
           this.$refs.scroll.refresh()
@@ -113,8 +124,36 @@ export default {
           }
         }
 
+
+         // console.log(position)  当 position.y > 1000 时显示出回到顶部按钮
+        this.isShowBackTop = (-position.y) > 1000
+
         // console.log(positionY)
+      },
+      addToCart(){
+        // 1. 先获取商品信息
+        const product = {}
+        product.image = this.topImages[0]
+        product.title = this.goods.title
+        product.desc = this.goods.desc
+        product.price = this.goods.realPrice
+        product.iid = this.iid
+        product.count = 0
+        // 2.添加到 购物车中 (添加到 VueX 中)
+        // this.$store.commit('addToCart', product)
+
+        // this.$store.dispatch('addToCart', product).then(res => {
+        //   console.log(res)    //只有执行完成操作之后才会执行 res
+        // })
+        // add 为将商品添加到购物车中
+        this.add(product).then(res => {
+          this.$toast.show(res)
+        })
+
+        // 3.显示弹窗
+
       }
+
   },
   created() {
     //  接收 gooditem 传过来的 iid
@@ -191,6 +230,6 @@ export default {
         background-color: #fff;
     }
     .content{
-        height: calc(100% - 44px);
+        height: calc(100% - 44px - 49px);
     }
 </style>
